@@ -1,0 +1,9 @@
+django>=5.0
+djangorestframework>=3.14
+django-cors-headers>=4.0
+PyMySQL>=1.1.0
+cryptography>=41.0
+django-environ>=0.10
+djangorestframework-simplejwt>=5.3
+Pillow>=10.0.0
+
