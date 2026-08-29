@@ -223,4 +223,43 @@ class SchoolRegistrationSerializer(serializers.Serializer):
             action=f"School registered and activated. Admin user created: {admin_user.username}"
         )
         
+        # 8. Send Welcome & Onboarding Email to School Admin
+        from django.core.mail import send_mail
+        from django.conf import settings
+        import logging
+
+        logger = logging.getLogger(__name__)
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        login_url = f"{frontend_url}/login"
+
+        subject = f"Welcome to Pathshala ERP - {school.name} is Activated!"
+        message = (
+            f"Dear {admin_user.get_full_name() or admin_user.first_name},\n\n"
+            f"Congratulations! Your institution \"{school.name}\" has been successfully registered and activated on Pathshala ERP.\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"INSTITUTION PORTAL CREDENTIALS\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Portal URL: {login_url}\n"
+            f"Username / Login Email: {admin_user.email}\n"
+            f"Assigned Role: School Administrator\n"
+            f"Subscription Tier: {plan.name} ({validated_data['subscription_duration_months']} Month/s)\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"You can now sign in to your dashboard to manage student admissions, faculty rosters, timetables, and fee collections.\n\n"
+            f"Need assistance? Contact our technical support team at Techmastersinnovations@gmail.com or +91 9880768222.\n\n"
+            f"Best regards,\n"
+            f"Techmasters Innovations Private Limited\n"
+            f"Pathshala ERP Cloud Services"
+        )
+
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                recipient_list=[admin_user.email],
+                fail_silently=False
+            )
+        except Exception as e:
+            logger.warning(f"Could not dispatch welcome email to {admin_user.email}: {e}")
+        
         return school
