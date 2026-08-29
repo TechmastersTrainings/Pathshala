@@ -1,10 +1,21 @@
 import axios from 'axios';
 
-const API_URL = 
-  process.env.NEXT_PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:8000/api/v1'
-    : 'https://pathshala-l1qy.onrender.com/api/v1');
+function getBaseUrl(): string {
+  let url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return 'http://localhost:8000/api/v1';
+    }
+    return 'https://pathshala-l1qy.onrender.com/api/v1';
+  }
+  url = url.trim().replace(/\/+$/, '');
+  if (!url.endsWith('/api/v1')) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
+
+const API_URL = getBaseUrl();
 
 export const api = axios.create({
   baseURL: API_URL,

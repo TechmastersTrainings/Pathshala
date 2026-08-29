@@ -20,6 +20,15 @@ urlpatterns = [
     path('api/v1/notifications/', include('apps.notifications.urls')),
     path('api/v1/analytics/', include('apps.analytics.urls')),
     path('api/v1/holidays/', include('apps.holidays.urls')),
+
+    # Root route aliases for compatibility
+    path('auth/', include('apps.authentication.urls')),
+    path('schools/', include('apps.schools.urls')),
+    path('students/', include('apps.students.urls')),
+    path('faculty/', include('apps.faculty.urls')),
+    path('attendance/', include('apps.attendance.urls')),
+    path('exams/', include('apps.exams.urls')),
+    path('fees/', include('apps.fees.urls')),
 ]
 
 if settings.DEBUG:
