@@ -2,27 +2,31 @@ import environ
 import os
 from pathlib import Path
 from datetime import timedelta
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 # Initialize environ
 env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, 'django-insecure-pathshala-secret-key-development-rbac-tenancy'),
-    DB_NAME=(str, 'pathshala'),
-    DB_USER=(str, 'root'),
-    DB_PASSWORD=(str, 'root1234'),
+    DB_NAME=(str, 'defaultdb'),
+    DB_USER=(str, 'avnadmin'),
+    DB_PASSWORD=(str, ''),
     DB_HOST=(str, 'localhost'),
     DB_PORT=(int, 3306),
+    DB_SSL_REQUIRE=(bool, False),
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Read .env file
+# Read .env file if present
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 # Application definition
 INSTALLED_APPS = [
@@ -57,6 +61,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,18 +90,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database configuration
+db_host = env('DB_HOST', default='localhost')
+db_ssl = env.bool('DB_SSL_REQUIRE', default=False) or 'aivencloud.com' in db_host
+
+db_options = {
+    'charset': 'utf8mb4',
+    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+}
+if db_ssl:
+    db_options['ssl'] = {'ssl-mode': 'REQUIRED'}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        }
+        'HOST': db_host,
+        'PORT': env('DB_PORT', default=3306),
+        'OPTIONS': db_options,
     }
 }
 
@@ -123,10 +135,19 @@ USE_I18N = True
 USE_TZ = True
 
 # Static & Media Files
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -155,12 +176,7 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-]
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
 CORS_ALLOW_CREDENTIALS = True
 
 # Email Configuration
